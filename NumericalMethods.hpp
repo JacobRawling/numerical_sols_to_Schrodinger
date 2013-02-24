@@ -64,7 +64,7 @@ vector<complex<double>> RK4_step(vector<complex<double>>(*compute_f)(vector<comp
 	
 	//compute new value for y
 	for (int i = 0; i < n; i++)
-		y[i] += (k1[i] + 2.0 * k2[i] + 2.0 * k3[i] + k4[i]) / 6.0;
+		y[i] = y[i] + (k1[i] + 2.0 * k2[i] + 2.0 * k3[i] + k4[i]) / 6.0;
 
 	return y;
 }

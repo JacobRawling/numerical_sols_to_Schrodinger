@@ -37,7 +37,7 @@ const int no_dimensions = 4001;
 //physics consts 
 const double pi = 3.14159265359; //M_PI  
 const double hbar = 1;
-const double Me = 10e3;
+const double Me = 1;
 const complex<double> imag_unit(0.,1.);
 
 //functions	
@@ -45,7 +45,7 @@ vector<complex<double>> psi_initial();	//the initial wavefunctions form
 vector<complex<double>> ModifiedHamiltonian(vector<complex<double>>& Psi_In, vector<complex<double>>& Psi_Out);	//how the wavefunction 
 																												//evolves with time
 double Potential(double x);				//potential field that the electron is in
-const double dt =	grid_width*grid_width*0.25;
+
 
 int main(){
 	//define output file
@@ -54,9 +54,9 @@ int main(){
 	cout.precision(5);
 
 		//define time step and range  
-	double t = 0;
-	double T = (Me*grid_width*grid_width)/hbar;
-	
+	double t = 0;										//current place in time
+	double T = (Me*grid_width*grid_width)/hbar;			//conversion to dimesionless time 
+	double dt = grid_width*grid_width*0.25;				//time step
 	double no_steps = 501;
 
 	vector<complex<double>> psi,psi_prev;
@@ -73,7 +73,7 @@ int main(){
 			name << "C:\\Users\\Jacob\\Documents\\Theory Computing\\Schroedinger WE\\test\\time" << i << ".txt";
 			output_file.open(name.str());	
 			for(int j = 0; j < no_dimensions;j++) //output the probability density 
-				output_file  << j*grid_width<< "\t" << abs(psi[j].real())*abs(psi[j].real()) << "\t" << Potential(j*grid_width) << "\n";
+				output_file  << j*grid_width<< "\t" << abs(psi[j])*abs(psi[j]) << "\t" << Potential(j*grid_width) << "\n";
 
 			output_file.close();
 		}//close if i%
