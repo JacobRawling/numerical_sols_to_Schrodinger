@@ -30,9 +30,11 @@
 #include "NumericalMethods.hpp"
 using namespace std;
 
-//define the f space and it's size
-#define grid_width 0.0005
-const int no_dimensions = 4001;
+//define the space and it's size
+const double a = 1e-10;
+const double full_width = 6*a;
+const int	 no_dimensions = 401;
+const double grid_width = (2*full_width)/no_dimensions;
 
 //physics consts 
 const double pi = 3.14159265359; //M_PI  
@@ -42,7 +44,7 @@ const complex<double> imag_unit(0.,1.);
 
 //functions	
 vector<complex<double>> psi_initial();	//the initial wavefunctions form	
-vector<complex<double>> ModifiedHamiltonian(vector<complex<double>>& Psi_In, vector<complex<double>>& Psi_Out);	//how the wavefunction 
+vector<complex<double>> ModifiedHamiltonian(const double& t,vector<complex<double>>& Psi_In);	//how the wavefunction 
 																												//evolves with time
 double Potential(double x);				//potential field that the electron is in
 
@@ -51,17 +53,17 @@ int main(){
 	//define output file
 	ofstream output_file;
 	output_file.precision(5); //output to 5 sig fig
-	cout.precision(5);
 
-		//define time step and range  
+	//define time step and range  
 	double t = 0;										//current place in time
-	double T = (Me*grid_width*grid_width)/hbar;			//conversion to dimesionless time 
-	double dt = grid_width*grid_width*0.25;				//time step
-	double no_steps = 501;
+	double T = 1;										//conversion to dimesionless time 
+	double dt = 0.05;									//time step
+	double no_steps = 2;
 
-	vector<complex<double>> psi,psi_prev;
+	//wavefunction
+	vector<complex<double>> psi;
 	psi = psi_initial();	
-	psi_prev = psi;
+	
 	//perform runge-kutta iterations and output results
 	for(int i = 0; i < no_steps; i++){
 		//open the file
@@ -69,17 +71,17 @@ int main(){
 		name.precision(3);
 
 		//output previous iteration
-		if(i%5 == 0){ //every n steps
+		if(i%1 == 0){ //every n steps
 			name << "C:\\Users\\Jacob\\Documents\\Theory Computing\\Schroedinger WE\\test\\time" << i << ".txt";
 			output_file.open(name.str());	
 			for(int j = 0; j < no_dimensions;j++) //output the probability density 
-				output_file  << j*grid_width<< "\t" << abs(psi[j])*abs(psi[j]) << "\t" << Potential(j*grid_width) << "\n";
+				output_file  << j << "\t" << abs(psi[j])*abs(psi[j]) << "\t" << Potential(j*grid_width) << "\n";
 
 			output_file.close();
 		}//close if i%
 
 		//iterate over a step
-		psi = RK4_step(ModifiedHamiltonian,dt,psi);
+		psi = RK4_step(ModifiedHamiltonian,dt,t,psi);
 		
 		//increase the time
 		t += dt;
@@ -88,43 +90,39 @@ int main(){
 	return 0;
 }//close main
 
-//For use in RK4 - what the time derivative of the wave function is equal to.
-vector<complex<double>> ModifiedHamiltonian(vector<complex<double>>& Psi_In, vector<complex<double>>& Psi_Out){
-	
+//For use in RK4 - what the time derivative of wave the function is equal to.
+vector<complex<double>> ModifiedHamiltonian(const double& t,vector<complex<double>>& Psi_In){
+	//returned variable
+	vector<complex<double>> Psi_Out = Psi_In;
+
+	//coefficients 
+	double r = grid_width/a; 
+	complex<double> C = imag_unit/(2*r*r);
+
 	//cycle through the wavefunction, and work out the second space derivative and potential 
-	for(int i = 0; i < no_dimensions;i++){
-		switch(i){//check if last or first element of vector 
-			case 0:	// if it is set to 0
-				Psi_Out[i] = (1.0/(Me*grid_width*grid_width*imag_unit))*(-pow(hbar*grid_width,2)*( (Psi_In[i+1] -2.0*Psi_In[i])/( pow(grid_width,2) ) ) + Potential(i*grid_width)*Psi_In[i]);
-				break;
-			case no_dimensions-1:
-				Psi_Out[i] = (1.0/(Me*grid_width*grid_width*imag_unit))*( -pow(hbar*grid_width,2)*( (Psi_In[i-1] - 2.0*Psi_In[i])/( pow(grid_width,2) ) ) + Potential(i*grid_width)*Psi_In[i] );				
-				break;
-			//otherwise use finite differences.
-			default:
-				Psi_Out[i] = (1.0/(Me*grid_width*grid_width*imag_unit))*(-(pow(hbar*grid_width,2)/2*Me)*( (Psi_In[i+1] -2.0*Psi_In[i] + Psi_In[i-1])/( pow(grid_width,2) ) ) + Potential(i*grid_width)*Psi_In[i]);
-				break;
-		}
+	for(int i = 1; i < no_dimensions-1;i++){	//excludes boundaries.
+		Psi_Out[i] = C*(Psi_In[i+1] - 2.0*Psi_In[i] + Psi_In[i-1]) - (imag_unit)*Potential(i*grid_width)*Psi_In[i];
 	}
+
 	return Psi_Out;
 }//close Modified Hamiltonian
 
-//the intiial distribution of the wavefunction
+//the intial distribution of the wavefunction
 vector<complex<double>> psi_initial(){
 	//the returned wavefunction
 	vector<complex<double>> psi(no_dimensions);
 
 	//constants
 	int n = 1;												//principle quantum number
-	complex<double> total_width = no_dimensions*grid_width;	//total width of the system
+	complex<double> total_width = (no_dimensions*grid_width)/a;	//total width of the system
 	complex<double> k = (n*pi)/total_width;					//wave vector 
 	complex<double> x_0 = total_width/2.0;					//inital displacement from origin
 	complex<double> Amplitude = 1;							//normalization perhaps?..
 
 	//create and fill the vector with approriate values
 	for(int i = 0; i < no_dimensions;i++){
-		complex<double> x  = complex<double>(i*grid_width);
-		psi[i] = Amplitude*exp(-k*(x-x_0)*(x-x_0))*exp(imag_unit*k*x);
+		complex<double> x  = complex<double>((i*grid_width)/a);
+		psi[i] = Amplitude*exp(-k*(x-x_0)*(x-x_0));//*exp(imag_unit*k*x);
 	}//close for
 
 	return psi;
@@ -132,13 +130,6 @@ vector<complex<double>> psi_initial(){
 
 //defines the real potential field that the system is in.
 double Potential(double x){
-	double A = 2;
-	
-	//if(x < (grid_width*no_dimensions/2))
-	//	return 0;
-	//return (*(x-(grid_width*no_dimensions/2)));
-	return ((x-(grid_width*no_dimensions/2))*(x-(grid_width*no_dimensions/2)));
-
-	//zero potential
+	//return ((x-(grid_width*no_dimensions/2))*(x-(grid_width*no_dimensions/2)));
 	return 0;	
 }//close Potential	

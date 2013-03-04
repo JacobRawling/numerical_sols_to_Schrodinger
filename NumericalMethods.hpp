@@ -29,44 +29,39 @@
 #include <complex>
 using namespace std;
 
-vector<complex<double>> RK4_step(vector<complex<double>>(*compute_f)(vector<complex<double>>& input,vector<complex<double>>& output), 
-	const double h,	vector<complex<double>> &y_vector ) {
+//REDO
+vector<complex<double>> RK4_step(vector<complex<double>>compute_f(const double& t, vector<complex<double>>& input), 
+	const double& h, const double& t, vector<complex<double>> &input_y ) {
+
 	//determine number of dimensions
-	int n = y_vector.size();
-	vector<complex<double>> y(n), f(n), k1(n), k2(n), k3(n), k4(n);
-	//get the initial function thing 
-	compute_f(y_vector, k1);
+	int n = input_y.size();
+	vector<complex<double>> y(n),						//the new y to be evaluated 
+							f(n),						//store variable for compute f
+							k1(n), k2(n), k3(n), k4(n);	//coefficients used in RK4
 	
-	//determine the coefficients
-	for(int i = 0; i < n; i++)
-		k1[i] = h * k1[i];
+	//get the initial coefficient
+	k1 = compute_f(t, input_y);
 	
 	//second coefficient
 	for (int i=0; i < n; i++)
-		y[i] = y_vector[i] + 0.5 * k1[i];
-	compute_f(y, f);	
-	for (int i = 0; i < n; i++)
-		k2[i] = h * f[i];
+		y[i] = input_y[i] + 0.5 * h *k1[i];
+	k2 = compute_f(t + 05*h, y);	
 
 	//third coefficient
 	for (int i=0; i < n; i++)
-		y[i] = y_vector[i] + 0.5 * k2[i];
-	compute_f(y, f);
-	for (int i = 0; i < n; i++)
-		k3[i] = h * f[i];
+		y[i] = input_y[i] + 0.5 * h * k2[i];
+	k3 = compute_f(t + 0.5*h,y);
+	
 	
 	//last coefficient
 	for (int i=0; i < n; i++)
-		y[i] = y_vector[i] + k3[i];
-	compute_f(y, f);
-	for (int i = 0; i < n; i++)
-		k4[i] = h * f[i];
+		y[i] = input_y[i] + h*k3[i];
+	k4 = compute_f(t + h,y);
 	
 	//compute new value for y
 	for (int i = 0; i < n; i++)
-		y[i] = y[i] + (k1[i] + 2.0 * k2[i] + 2.0 * k3[i] + k4[i]) / 6.0;
+		input_y[i] = input_y[i] + h*(k1[i] + 2.0 * k2[i] + 2.0 * k3[i] + k4[i]) / 6.0;
 
-	return y;
+	return input_y;
 }
-
 #endif
