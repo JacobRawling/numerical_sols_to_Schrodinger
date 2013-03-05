@@ -57,13 +57,13 @@ int main(){
 	//define time step and range  
 	double t = 0;										//current place in time
 	double T = 1;										//conversion to dimesionless time 
-	double dt = 0.05;									//time step
-	double no_steps = 2;
+	double dt = 5e-4;									//time step
+	double no_steps = 15000;
 
 	//wavefunction
 	vector<complex<double>> psi;
 	psi = psi_initial();	
-	
+	int output_mod = 10;
 	//perform runge-kutta iterations and output results
 	for(int i = 0; i < no_steps; i++){
 		//open the file
@@ -71,7 +71,7 @@ int main(){
 		name.precision(3);
 
 		//output previous iteration
-		if(i%1 == 0){ //every n steps
+		if(i%output_mod == 0){ //every n steps
 			name << "C:\\Users\\Jacob\\Documents\\Theory Computing\\Schroedinger WE\\test\\time" << i << ".txt";
 			output_file.open(name.str());	
 			for(int j = 0; j < no_dimensions;j++) //output the probability density 
@@ -93,17 +93,17 @@ int main(){
 //For use in RK4 - what the time derivative of wave the function is equal to.
 vector<complex<double>> ModifiedHamiltonian(const double& t,vector<complex<double>>& Psi_In){
 	//returned variable
-	vector<complex<double>> Psi_Out = Psi_In;
+	vector<complex<double>> Psi_Out(Psi_In.size());
 
 	//coefficients 
 	double r = grid_width/a; 
 	complex<double> C = imag_unit/(2*r*r);
 
 	//cycle through the wavefunction, and work out the second space derivative and potential 
-	for(int i = 1; i < no_dimensions-1;i++){	//excludes boundaries.
-		Psi_Out[i] = C*(Psi_In[i+1] - 2.0*Psi_In[i] + Psi_In[i-1]) - (imag_unit)*Potential(i*grid_width)*Psi_In[i];
+	for(int i = 1; i < no_dimensions-1;i++){	//excludes boundaries - i.e 
+		Psi_Out[i] = C*(Psi_In[i+1] - 2.0*Psi_In[i] + Psi_In[i-1]) -  0.0*(imag_unit)*Potential(i*grid_width)*Psi_In[i];
 	}
-
+	
 	return Psi_Out;
 }//close Modified Hamiltonian
 
@@ -113,23 +113,26 @@ vector<complex<double>> psi_initial(){
 	vector<complex<double>> psi(no_dimensions);
 
 	//constants
-	int n = 1;												//principle quantum number
+	double wdth = 0.5;												//principle quantum number
 	complex<double> total_width = (no_dimensions*grid_width)/a;	//total width of the system
-	complex<double> k = (n*pi)/total_width;					//wave vector 
+	complex<double> k = (wdth)/total_width;					//wave vector 
 	complex<double> x_0 = total_width/2.0;					//inital displacement from origin
 	complex<double> Amplitude = 1;							//normalization perhaps?..
 
 	//create and fill the vector with approriate values
-	for(int i = 0; i < no_dimensions;i++){
+	for(int i = 1; i < no_dimensions-1;i++){
 		complex<double> x  = complex<double>((i*grid_width)/a);
-		psi[i] = Amplitude*exp(-k*(x-x_0)*(x-x_0));//*exp(imag_unit*k*x);
+		psi[i] = Amplitude*exp(-0.5*(x-x_0)*(x-x_0)/(wdth*wdth));
 	}//close for
 
+	//apply boundary conditions - 0 at boundary 
+	psi[0]				 = 0;
+	psi[no_dimensions-1] = 0;
 	return psi;
 }//close psi_initial
 
 //defines the real potential field that the system is in.
 double Potential(double x){
-	//return ((x-(grid_width*no_dimensions/2))*(x-(grid_width*no_dimensions/2)));
+	return ((x-(grid_width*no_dimensions/2.0))*(x-(grid_width*no_dimensions/2.0)))/((grid_width*no_dimensions/(2.0))*(grid_width*no_dimensions/2.0));
 	return 0;	
 }//close Potential	
