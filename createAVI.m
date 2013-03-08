@@ -1,10 +1,10 @@
 %% Open avi file
-writerObj = VideoWriter('a wavefunc');
+writerObj = VideoWriter('large barrier');
 open(writerObj);
 G = newplot;
 
 %% Add one frame at a time
-for x = 0:10:14999%start:increments:end
+for x = 0:10:19999%start:increments:end
     format LONGG;
     num = num2str(x,5);
     name = strcat('time',num);
